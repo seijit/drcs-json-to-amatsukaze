@@ -1,7 +1,6 @@
 ﻿<#
 .SYNOPSIS
     drcs-subst.json を Amatsukaze 互換の BMP と drcs_map.txt に変換・マージします。
-    v22: 日本語維持 + PowerShell 5.1 対応 (C#構文修正 & TLS1.2有効化)。
 
 .DESCRIPTION
     NHKなどで公開されている DRCS 代替文字定義 (JSON) を読み込み、
@@ -28,11 +27,11 @@
 
 .EXAMPLE
     # 全自動実行 (Webから取得し、マージせず新規作成)
-    .\Convert.ps1
+    .\Convert-DrcsJsonToAmatsukaze.ps1
 
 .EXAMPLE
-    # 既存環境への追加 (既存ファイルを指定してマージ)
-    .\Convert.ps1 "C:\Amatsukaze\drcs\drcs_map.txt"
+    # 既存ファイルを読み込んでマージしたファイルを出力 (既存ファイルは上書き・更新はしない)
+    .\Convert-DrcsJsonToAmatsukaze.ps1 "C:\Amatsukaze\drcs\drcs_map.txt"
 #>
 
 [CmdletBinding()]
@@ -433,4 +432,5 @@ try {
 } catch {
     Write-Error "エラーが発生しました: $_"
     exit 1
+
 }
