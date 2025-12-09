@@ -5,7 +5,7 @@
 
 .DESCRIPTION
     NHK等の放送波に含まれる外字データ(DRCS)の定義ファイル(JSON)を読み込み、
-    Amatsukaze互換の形式(MD5ハッシュ名のBMP + マップファイル)に変換します。
+    Amatsukaze互換の形式(MD5ハッシュ名のBMP + マップ定義ファイル)に変換します。
 
     【AmatsukazeのDRCS仕様について】
     Amatsukazeは、TSファイル内の字幕データ(DRCS)をOCRではなく「画像パターンマッチング」でテキストに置換します。
@@ -43,19 +43,22 @@
     .\Convert-DrcsJsonToAmatsukaze.ps1 -IncludeNonHD
 
 .EXAMPLE
-    # 3. 以前作成したマップを引き継いで、差分だけを出力する場合
-    # -ExistingMapPath に古いマップファイルを指定し、-OutputDir には新しいフォルダ名を指定します。
-    # 既に変換済みの画像は生成されず、新しい外字だけが生成されるため高速です。
-    .\Convert-DrcsJsonToAmatsukaze.ps1 -ExistingMapPath "old_drcs\drcs_map.txt" -OutputDir "drcs_v2"
+    # 3. 出力先フォルダ名を変更する場合
+    .\Convert-DrcsJsonToAmatsukaze.ps1 -OutputDir "drcs_v2"
 
 .EXAMPLE
-    # 4. ローカルにあるJSONファイルを使う場合
+    # 4. 既存のマップ定義を引き継いだマップ定義ファイルを出力する場合
+    # -ExistingMapPath に既存のマップ定義ファイルを指定します。
+    # 既存のマップ定義ファイルを指定した場合は、その内容を読み込み、
+    # 未登録の文字のみを追記した新しいマップ定義ファイルを出力します。
+    # 既存のマップ定義ファイルを上書き更新することはありません。
+    # 既に変換済みの画像は生成されず、新しい外字だけが生成されます。
+    .\Convert-DrcsJsonToAmatsukaze.ps1 -ExistingMapPath "C:\amatsukaze\drcs\drcs_map.txt"
+
+.EXAMPLE
+    # 5. ローカルにあるJSONファイルを使う場合
     # ネットからダウンロードせず、PC内のファイルを読み込みます。
     .\Convert-DrcsJsonToAmatsukaze.ps1 -JsonPath "C:\Downloads\drcs-subst.json"
-
-.EXAMPLE
-    # 5. 出力先フォルダ名を変更する場合
-    .\Convert-DrcsJsonToAmatsukaze.ps1 -OutputDir "NewDrcs"
 #>
 
 [CmdletBinding()]
@@ -465,3 +468,4 @@ try {
     Write-Host "Log File   : $logFilePath"
     Write-Host "Status     : Added $($result.Added), Skipped $($result.Skipped), Excluded(Non-HD) $($result.ExcludedNonHD)"
 } catch { Write-Error "Error: $_"; exit 1 }
+
