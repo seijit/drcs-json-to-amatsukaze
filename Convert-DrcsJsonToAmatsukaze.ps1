@@ -1,7 +1,7 @@
-<#
+﻿<#
 .SYNOPSIS
     drcs-subst.json を解析し、Amatsukaze 用の BMP と drcs_map.txt を生成します。
-    (v34.1: デフォルトでHD(36x36)以外を除外。オプションで全サイズ取り込み可能)
+    (v35: Get-JsonData を PowerShell 5.1 に対応)
 
 .DESCRIPTION
     NHK等の放送波に含まれる外字データ(DRCS)の定義ファイル(JSON)を読み込み、
@@ -338,11 +338,27 @@ function Initialize-Environment {
 function Get-JsonData {
     param([string]$Path)
     # HTTPS通信のためのTLS設定
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
     Write-Host "Loading JSON Data: $Path"
-    if ($Path -match "^https?://") { try { return Invoke-RestMethod -Uri $Path -Method Get } catch { throw "Download Failed: $($_.Exception.Message)" } }
-    elseif (Test-Path $Path) { return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json }
-    else { throw "File Not Found: $Path" }
+    
+    if ($Path -match "^https?://") { 
+        try { 
+            # Windows PowerShell (5.1) 対策: 
+            # Invoke-RestMethod は文字化けするため、WebClient で UTF-8 を明示して取得
+            $wc = New-Object System.Net.WebClient
+            $wc.Encoding = [System.Text.Encoding]::UTF8
+            $jsonStr = $wc.DownloadString($Path)
+            return $jsonStr | ConvertFrom-Json
+        } catch { 
+            throw "Download Failed: $($_.Exception.Message)" 
+        } 
+    }
+    elseif (Test-Path $Path) { 
+        return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json 
+    }
+    else { 
+        throw "File Not Found: $Path" 
+    }
 }
 
 function Load-ExistingMap {
@@ -468,4 +484,3 @@ try {
     Write-Host "Log File   : $logFilePath"
     Write-Host "Status     : Added $($result.Added), Skipped $($result.Skipped), Excluded(Non-HD) $($result.ExcludedNonHD)"
 } catch { Write-Error "Error: $_"; exit 1 }
-
