@@ -4,7 +4,7 @@ REM Amatsukaze用 DRCS変換スクリプト起動ランチャー
 REM -----------------------------------------------------------------------------
 REM 
 REM 【概要】
-REM  同階層にある 同名のPowerShellScript を適切な権限で実行します。 
+REM  同階層にある 同名のPowerShellScript を実行します。 
 REM
 REM 【使い方 / Examples】
 REM
@@ -41,11 +41,5 @@ chcp 65001 > nul
 
 REM PowerShell呼び出し 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0%SELF_FILE_NAME%.ps1" %*
-
-REM エラー判定と待機 
-if %errorlevel% neq 0 (
-    echo.
-    echo [ERROR] Error Occurred. Check the message above.
-)
 
 pause
