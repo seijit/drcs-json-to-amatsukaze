@@ -1,32 +1,32 @@
 @echo off
 REM -----------------------------------------------------------------------------
-REM Amatsukaze—p DRCS•ÏŠ·ƒXƒNƒŠƒvƒg‹N“®ƒ‰ƒ“ƒ`ƒƒ[
+REM Amatsukazeç”¨ DRCSå¤‰æ›ã‚¹ã‚¯ãƒªãƒ—ãƒˆèµ·å‹•ãƒ©ãƒ³ãƒãƒ£ãƒ¼
 REM -----------------------------------------------------------------------------
 REM 
-REM yŠT—vz
-REM  “¯ŠK‘w‚É‚ ‚é "Convert-DrcsJsonToAmatsukaze.ps1" ‚ğ“KØ‚ÈŒ ŒÀ‚ÅÀs‚µ‚Ü‚·B 
+REM ã€æ¦‚è¦ã€‘
+REM  åŒéšå±¤ã«ã‚ã‚‹ åŒåã®PowerShellScript ã‚’é©åˆ‡ãªæ¨©é™ã§å®Ÿè¡Œã—ã¾ã™ã€‚ 
 REM
-REM yg‚¢•û / Examplesz
+REM ã€ä½¿ã„æ–¹ / Examplesã€‘
 REM
-REM  1. ƒ_ƒuƒ‹ƒNƒŠƒbƒN‚ÅÀs (Šî–{)
-REM     - ƒfƒtƒHƒ‹ƒgİ’è‚ÅÀs‚³‚ê‚Ü‚·B
-REM     - V‹KƒtƒHƒ‹ƒ_ "drcs_output" ‚ªì¬‚³‚êAHD‰æ¿(36x36)‚ÌŠOš‚Ì‚İ‚ªo—Í‚³‚ê‚Ü‚·B
+REM  1. ãƒ€ãƒ–ãƒ«ã‚¯ãƒªãƒƒã‚¯ã§å®Ÿè¡Œ (åŸºæœ¬)
+REM     - ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆè¨­å®šã§å®Ÿè¡Œã•ã‚Œã¾ã™ã€‚
+REM     - æ–°è¦ãƒ•ã‚©ãƒ«ãƒ€ "drcs_output" ãŒä½œæˆã•ã‚Œã€HDç”»è³ª(36x36)ã®å¤–å­—ã®ã¿ãŒå‡ºåŠ›ã•ã‚Œã¾ã™ã€‚
 REM
-REM  2. ƒRƒ}ƒ“ƒhƒvƒƒ“ƒvƒg‚©‚çÀs (ƒIƒvƒVƒ‡ƒ“w’è)
-REM     ‚±‚Ìƒoƒbƒ`ƒtƒ@ƒCƒ‹‚ÌŒã‚ë‚Éƒpƒ‰ƒ[ƒ^‚ğ•t‚¯‚é‚±‚Æ‚ÅAİ’è‚ğ•ÏX‚Å‚«‚Ü‚·B
+REM  2. ã‚³ãƒãƒ³ãƒ‰ãƒ—ãƒ­ãƒ³ãƒ—ãƒˆã‹ã‚‰å®Ÿè¡Œ (ã‚ªãƒ—ã‚·ãƒ§ãƒ³æŒ‡å®š)
+REM     ã“ã®ãƒãƒƒãƒãƒ•ã‚¡ã‚¤ãƒ«ã®å¾Œã‚ã«ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’ä»˜ã‘ã‚‹ã“ã¨ã§ã€è¨­å®šã‚’å¤‰æ›´ã§ãã¾ã™ã€‚
 REM
-REM     [—áA] SD•ú‘—‚âƒƒ“ƒZƒO(’á‰æ¿)‚Ìƒf[ƒ^‚àŠÜ‚ß‚éê‡:
+REM     [ä¾‹A] SDæ”¾é€ã‚„ãƒ¯ãƒ³ã‚»ã‚°(ä½ç”»è³ª)ã®ãƒ‡ãƒ¼ã‚¿ã‚‚å«ã‚ã‚‹å ´åˆ:
 REM       Convert-DrcsJsonToAmatsukaze.bat -IncludeNonHD
 REM
-REM     [—áB] o—ÍæƒtƒHƒ‹ƒ_–¼‚ğ•ÏX‚·‚éê‡ (¦ƒtƒHƒ‹ƒ_‚Í‘¶İ‚µ‚È‚¢‚±‚Æ):
+REM     [ä¾‹B] å‡ºåŠ›å…ˆãƒ•ã‚©ãƒ«ãƒ€åã‚’å¤‰æ›´ã™ã‚‹å ´åˆ (â€»ãƒ•ã‚©ãƒ«ãƒ€ã¯å­˜åœ¨ã—ãªã„ã“ã¨):
 REM       Convert-DrcsJsonToAmatsukaze.bat -OutputDir "drcs_v2"
 REM
-REM     [—áC] Šù‘¶‚Ìƒ}ƒbƒvƒtƒ@ƒCƒ‹‚ğˆø‚«Œp‚¢‚Å·•ªXV‚·‚éê‡:
+REM     [ä¾‹C] æ—¢å­˜ã®ãƒãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã‚’å¼•ãç¶™ã„ã§å·®åˆ†æ›´æ–°ã™ã‚‹å ´åˆ:
 REM       Convert-DrcsJsonToAmatsukaze.bat -ExistingMapPath "old\drcs_map.txt" -OutputDir "new_drcs"
 REM
 REM -----------------------------------------------------------------------------
 
-REM ƒXƒNƒŠƒvƒgƒpƒX‚Ì‰ğŒˆ 
+REM ã‚¹ã‚¯ãƒªãƒ—ãƒˆãƒ‘ã‚¹ã®è§£æ±º 
 set "SELF_FILE_NAME=%~n0"
 title %~nx0
 
@@ -36,15 +36,16 @@ echo -------------------------------------------------------
 echo  Target Script: %SELF_FILE_NAME%.ps1
 echo.
 
-REM PowerShell‚Ìo—Í(UTF-8)‚ğ³‚µ‚­•\¦‚·‚é‚½‚ß‚ÉAÀs’¼‘O‚ÉƒR[ƒhƒy[ƒW‚ğ•ÏX 
+REM ã‚³ãƒ¼ãƒ‰ãƒšãƒ¼ã‚¸ã‚’å¤‰æ›´ 
 chcp 65001 > nul
 
-REM PowerShellŒÄ‚Ño‚µ 
-powershell -NoProfile -ExecutionPolicy RemoteSigned -File "%~dp0%SELF_FILE_NAME%.ps1" %*
+REM PowerShellå‘¼ã³å‡ºã— 
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0%SELF_FILE_NAME%.ps1" %*
 
-REM ƒGƒ‰[”»’è‚Æ‘Ò‹@ 
+REM ã‚¨ãƒ©ãƒ¼åˆ¤å®šã¨å¾…æ©Ÿ 
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] Error Occurred. Check the message above.
 )
+
 pause
