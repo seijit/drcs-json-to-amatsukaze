@@ -1,9 +1,50 @@
-:: ÊñáÂ≠ó„Ç≥„Éº„ÉâË®≠ÂÆö 
-chcp 65001 > nul
+@echo off
+REM -----------------------------------------------------------------------------
+REM Amatsukazeóp DRCSïœä∑ÉXÉNÉäÉvÉgãNìÆÉâÉìÉ`ÉÉÅ[
+REM -----------------------------------------------------------------------------
+REM 
+REM ÅyäTóvÅz
+REM  ìØäKëwÇ…Ç†ÇÈ "Convert-DrcsJsonToAmatsukaze.ps1" ÇìKêÿÇ»å†å¿Ç≈é¿çsÇµÇ‹Ç∑ÅB 
+REM
+REM ÅyégÇ¢ï˚ / ExamplesÅz
+REM
+REM  1. É_ÉuÉãÉNÉäÉbÉNÇ≈é¿çs (äÓñ{)
+REM     - ÉfÉtÉHÉãÉgê›íËÇ≈é¿çsÇ≥ÇÍÇ‹Ç∑ÅB
+REM     - êVãKÉtÉHÉãÉ_ "drcs_output" Ç™çÏê¨Ç≥ÇÍÅAHDâÊéø(36x36)ÇÃäOéöÇÃÇ›Ç™èoóÕÇ≥ÇÍÇ‹Ç∑ÅB
+REM
+REM  2. ÉRÉ}ÉìÉhÉvÉçÉìÉvÉgÇ©ÇÁé¿çs (ÉIÉvÉVÉáÉìéwíË)
+REM     Ç±ÇÃÉoÉbÉ`ÉtÉ@ÉCÉãÇÃå„ÇÎÇ…ÉpÉâÉÅÅ[É^ÇïtÇØÇÈÇ±Ç∆Ç≈ÅAê›íËÇïœçXÇ≈Ç´Ç‹Ç∑ÅB
+REM
+REM     [ó·A] SDï˙ëóÇ‚ÉèÉìÉZÉO(í·âÊéø)ÇÃÉfÅ[É^Ç‡ä‹ÇﬂÇÈèÍçá:
+REM       Convert-DrcsJsonToAmatsukaze.bat -IncludeNonHD
+REM
+REM     [ó·B] èoóÕêÊÉtÉHÉãÉ_ñºÇïœçXÇ∑ÇÈèÍçá (Å¶ÉtÉHÉãÉ_ÇÕë∂ç›ÇµÇ»Ç¢Ç±Ç∆):
+REM       Convert-DrcsJsonToAmatsukaze.bat -OutputDir "drcs_v2"
+REM
+REM     [ó·C] ä˘ë∂ÇÃÉ}ÉbÉvÉtÉ@ÉCÉãÇà¯Ç´åpÇ¢Ç≈ç∑ï™çXêVÇ∑ÇÈèÍçá:
+REM       Convert-DrcsJsonToAmatsukaze.bat -ExistingMapPath "old\drcs_map.txt" -OutputDir "new_drcs"
+REM
+REM -----------------------------------------------------------------------------
 
-:: Ëá™Ë∫´„Å®ÂêåÂêç„ÅÆps1„Çπ„ÇØ„É™„Éó„Éà„Å´„ÄÅ„Éâ„É©„ÉÉ„Ç∞„Åï„Çå„ÅüÂºïÊï∞„ÇíÊ∏°„Åó„Å¶ÂÆüË°å 
+REM ÉXÉNÉäÉvÉgÉpÉXÇÃâåà 
 set "SELF_FILE_NAME=%~n0"
 title %~nx0
-pwsh -NoProfile -ExecutionPolicy RemoteSigned -File "%~dp0%SELF_FILE_NAME%.ps1" "%~1"
 
+echo -------------------------------------------------------
+echo  Convert-DrcsJsonToAmatsukaze (Launcher)
+echo -------------------------------------------------------
+echo  Target Script: %SELF_FILE_NAME%.ps1
+echo.
+
+REM PowerShellÇÃèoóÕ(UTF-8)Çê≥ÇµÇ≠ï\é¶Ç∑ÇÈÇΩÇﬂÇ…ÅAé¿çsíºëOÇ…ÉRÅ[ÉhÉyÅ[ÉWÇïœçX 
+chcp 65001 > nul
+
+REM PowerShellåƒÇ—èoÇµ 
+powershell -NoProfile -ExecutionPolicy RemoteSigned -File "%~dp0%SELF_FILE_NAME%.ps1" %*
+
+REM ÉGÉâÅ[îªíËÇ∆ë“ã@ 
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERROR] Error Occurred. Check the message above.
+)
 pause
