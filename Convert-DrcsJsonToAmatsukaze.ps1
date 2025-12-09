@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
     drcs-subst.json を Amatsukaze 互換の BMP と drcs_map.txt に変換・マージします。
-    v29: 72バイト問題対策強化。「フチ接触ペナルティ」と「縦方向優先スコア」を導入。
+    v30: 可変サイズ出力対応版。36x36への強制リサイズを廃止し、本来のサイズとハッシュ値を出力します。
 #>
 
 [CmdletBinding()]
@@ -12,7 +12,7 @@ param(
     [Parameter(Position=3)] [string]$OutputMapFileName = "drcs_map.txt"
 )
 
-# 定数定義: C#ロジック
+# 定数定義: C#ロジック (可変サイズ対応版)
 Set-Variable -Name CSHARP_CODE -Option Constant -Value @'
 using System;
 using System.IO;
@@ -48,7 +48,7 @@ public class AmatsukazeLogic
 
             byte[] rawData = Convert.FromBase64String(base64String);
             
-            // サイズ推定 (強化版)
+            // サイズ推定
             int w, h, depth;
             EstimateFormatWithAnalysis(rawData, out w, out h, out depth);
             
@@ -58,9 +58,15 @@ public class AmatsukazeLogic
                 res.DetectInfo = String.Format("{0} bytes -> {1}x{2} ({3}bit)", rawData.Length, w, h, depth == 2 ? 2 : 1);
             }
 
+            // 指定されたサイズ(w, h)そのままでキャンバスを作成（センタリング・36x36強制を廃止）
             byte[,] canvas = CreateCanvas(rawData, w, h, depth);
+            
+            // そのキャンバスサイズに基づいてハッシュ計算
             res.Hash = CalculateAmatsukazeMD5(canvas);
+            
+            // そのキャンバスサイズに基づいてBMP生成
             res.BmpBytes = CreateAmatsukazeBMP(canvas);
+            
             res.Success = true;
 
         } catch (Exception ex) {
@@ -72,7 +78,7 @@ public class AmatsukazeLogic
     private static void EstimateFormatWithAnalysis(byte[] rawData, out int w, out int h, out int depth)
     {
         int len = rawData.Length;
-        w = 36; h = 36; depth = 2; // Default
+        w = 36; h = 36; depth = 2; // Default fallback
 
         // 明確なサイズ
         if (len == 324) { w = 36; h = 36; depth = 2; return; }
@@ -82,18 +88,12 @@ public class AmatsukazeLogic
         if (len == 96)  { w = 16; h = 24; depth = 2; return; }
         if (len == 57)  { w = 15; h = 30; depth = 1; return; }
 
-        // ★72バイト問題: 高度解析
+        // 72バイト問題対策
         if (len == 72) {
-            // パターンA: 16x18 (アイコン)
             double scoreA = AnalyzePattern(rawData, 16, 18, 2);
-            // パターンB: 12x24 (半角文字)
             double scoreB = AnalyzePattern(rawData, 12, 24, 2);
-
-            // ★バイアス調整: 
-            // 12x24の方が一般的であるため、スコアにボーナスを与える
-            // また、16x18は見切れ(フチ接触)が発生しやすいため、AnalyzePattern内で減点されているはず
             
-            if (scoreB >= scoreA * 0.8) { // BがAの8割以上のスコアならB(縦長)を採用するバイアス
+            if (scoreB >= scoreA * 0.8) {
                 w = 12; h = 24; depth = 2;
             } else {
                 w = 16; h = 18; depth = 2;
@@ -101,7 +101,7 @@ public class AmatsukazeLogic
             return;
         }
 
-        // その他
+        // その他汎用探索
         int[] commonHeights = new int[] { 36, 30, 24, 18, 20, 16 };
         int[] tryDepths = new int[] { 2, 1 };
 
@@ -116,6 +116,7 @@ public class AmatsukazeLogic
                 }
             }
         }
+        
         // Fallback
         if ((len * 4) % 36 == 0) {
             h = 36; w = (len * 4) / 36;
@@ -124,11 +125,9 @@ public class AmatsukazeLogic
         }
     }
 
-    // パターン解析スコア計算
-    // 戻り値が高いほど「文字らしい」
     private static double AnalyzePattern(byte[] rawData, int w, int h, int depth)
     {
-        byte[,] tempCanvas = CreateCanvas(rawData, w, h, depth, false); // Centeringなし
+        byte[,] tempCanvas = CreateCanvas(rawData, w, h, depth); 
         double score = 0;
         int edgeContactPixels = 0;
 
@@ -137,45 +136,25 @@ public class AmatsukazeLogic
                 byte current = tempCanvas[y, x];
                 if (current == 0) continue;
 
-                // 1. 凝集度 (Coherency)
-                // 縦の繋がりを重視 (x2)
                 if (y + 1 < h && tempCanvas[y + 1, x] == current) score += 2.0;
-                // 横の繋がり (x1)
                 if (x + 1 < w && tempCanvas[y, x + 1] == current) score += 1.0;
 
-                // 2. フチ接触チェック (Edge Contact)
-                // 上端(y=0) または 下端(y=h-1) にドットがある場合カウント
                 if (y == 0 || y == h - 1) edgeContactPixels++;
-                // 左右の端も少しチェック（ストライドズレ検知用）
                 if (x == 0 || x == w - 1) edgeContactPixels++;
             }
         }
-
-        // ペナルティ適用: フチに接しているピクセル1つにつき5点減点
-        // サイズが合っていない場合、全体がズレてフチにべったり張り付く傾向があるため
         score -= (edgeContactPixels * 5.0);
-
         return score;
     }
 
-    private static byte[,] CreateCanvas(byte[] rawData, int w, int h, int depth, bool applyCentering = true)
+    private static byte[,] CreateCanvas(byte[] rawData, int w, int h, int depth)
     {
-        byte[,] canvas = new byte[36, 36];
+        byte[,] canvas = new byte[h, w]; // h行 w列
         int bitIndex = 0;
         int len = rawData.Length;
 
-        int offsetX = 0;
-        int offsetY = 0;
-        
-        if (applyCentering) {
-            offsetX = (36 - w) / 2;
-            offsetY = (36 - h) / 2;
-            if (offsetX < 0) offsetX = 0;
-            if (offsetY < 0) offsetY = 0;
-        }
-
-        for (int y = 0; y < h && (y + offsetY) < 36; y++) {
-            for (int x = 0; x < w && (x + offsetX) < 36; x++) {
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
                 int val = 0;
                 if (depth == 2) {
                     int byteIdx = bitIndex / 4;
@@ -189,7 +168,7 @@ public class AmatsukazeLogic
                         val = (bit == 1) ? 3 : 0;
                     }
                 }
-                canvas[y + offsetY, x + offsetX] = (byte)val;
+                canvas[y, x] = (byte)val;
                 bitIndex++;
             }
         }
@@ -198,14 +177,16 @@ public class AmatsukazeLogic
 
     private static string CalculateAmatsukazeMD5(byte[,] canvas)
     {
-        int nWidth = 36; int nHeight = 36;
-        int packedSize = (nWidth * nHeight + 3) / 4; 
+        int h = canvas.GetLength(0);
+        int w = canvas.GetLength(1);
+        
+        int packedSize = (w * h + 3) / 4; 
         byte[] bData = new byte[packedSize]; 
         
-        for (int y = nHeight - 1; y >= 0; y--) {
-            for (int x = 0; x < nWidth; x++) {
+        for (int y = h - 1; y >= 0; y--) {
+            for (int x = 0; x < w; x++) {
                 int nPix = canvas[y, x];
-                int nPos = y * nWidth + x;
+                int nPos = y * w + x;
                 int shift = (3 - (nPos % 4)) * 2;
                 bData[nPos / 4] |= (byte)(nPix << shift);
             }
@@ -218,20 +199,46 @@ public class AmatsukazeLogic
 
     private static byte[] CreateAmatsukazeBMP(byte[,] canvas)
     {
-        int w = 36; int h = 36;
-        int stride = 20;
+        int h = canvas.GetLength(0);
+        int w = canvas.GetLength(1);
+
+        // BMP Stride計算: ((width * 4bit + 31) / 32) * 4 bytes
+        int stride = ((w * 4 + 31) / 32) * 4;
+        
         int pixelDataSize = stride * h;
         int fileSize = 14 + 40 + 64 + pixelDataSize;
 
         using (var ms = new MemoryStream(fileSize))
         using (var writer = new BinaryWriter(ms)) {
-            writer.Write((ushort)0x4D42); writer.Write((uint)fileSize); writer.Write((ushort)0); writer.Write((ushort)0); writer.Write((uint)(14 + 40 + 64));
-            writer.Write((uint)40); writer.Write((int)w); writer.Write((int)h); writer.Write((ushort)1); writer.Write((ushort)4); writer.Write((uint)0); writer.Write((uint)pixelDataSize); writer.Write((int)0); writer.Write((int)0); writer.Write((uint)0); writer.Write((uint)0);
+            // Bitmap File Header
+            writer.Write((ushort)0x4D42);
+            writer.Write((uint)fileSize);
+            writer.Write((ushort)0);
+            writer.Write((ushort)0);
+            writer.Write((uint)(14 + 40 + 64));
+
+            // Bitmap Info Header
+            writer.Write((uint)40);
+            writer.Write((int)w); // 可変幅
+            writer.Write((int)h); // 可変高さ
+            writer.Write((ushort)1);
+            writer.Write((ushort)4);
+            writer.Write((uint)0);
+            writer.Write((uint)pixelDataSize);
+            writer.Write((int)0);
+            writer.Write((int)0);
+            writer.Write((uint)0);
+            writer.Write((uint)0);
+
+            // Palette
             writer.Write(PALETTE);
+
+            // Pixel Data
             byte[] buffer = new byte[pixelDataSize];
             for (int y = 0; y < h; y++) {
                 int srcY = (h - 1) - y;
                 int rowOffset = y * stride;
+                
                 for (int x = 0; x < w; x+=2) {
                     byte p1 = canvas[srcY, x];
                     byte p2 = (x + 1 < w) ? canvas[srcY, x + 1] : (byte)0;
