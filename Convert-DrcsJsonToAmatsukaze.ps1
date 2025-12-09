@@ -38,27 +38,29 @@
     .\Convert-DrcsJsonToAmatsukaze.ps1
 
 .EXAMPLE
-    # 2. SD放送やワンセグも含める場合
-    # サブチャンネルなどのTSを扱う可能性がある場合に指定します。
-    .\Convert-DrcsJsonToAmatsukaze.ps1 -IncludeNonHD
-
-.EXAMPLE
-    # 3. 出力先フォルダ名を変更する場合
-    .\Convert-DrcsJsonToAmatsukaze.ps1 -OutputDir "drcs_v2"
-
-.EXAMPLE
-    # 4. 既存のマップ定義を引き継いだマップ定義ファイルを出力する場合
+    # 2. 既存のマップ定義を引き継いだマップ定義ファイルを出力する場合
     # -ExistingMapPath に既存のマップ定義ファイルを指定します。
+    # または第1引数に既存のマップ定義ファイルを指定します。
     # 既存のマップ定義ファイルを指定した場合は、その内容を読み込み、
     # 未登録の文字のみを追記した新しいマップ定義ファイルを出力します。
     # 既存のマップ定義ファイルを上書き更新することはありません。
     # 既に変換済みの画像は生成されず、新しい外字だけが生成されます。
     .\Convert-DrcsJsonToAmatsukaze.ps1 -ExistingMapPath "C:\amatsukaze\drcs\drcs_map.txt"
+    .\Convert-DrcsJsonToAmatsukaze.ps1 "C:\amatsukaze\drcs\drcs_map.txt"
 
 .EXAMPLE
-    # 5. ローカルにあるJSONファイルを使う場合
+    # 3. ローカルにあるJSONファイルを使う場合
     # ネットからダウンロードせず、PC内のファイルを読み込みます。
     .\Convert-DrcsJsonToAmatsukaze.ps1 -JsonPath "C:\Downloads\drcs-subst.json"
+
+.EXAMPLE
+    # 4. 出力先フォルダ名を変更する場合
+    .\Convert-DrcsJsonToAmatsukaze.ps1 -OutputDir "drcs_v2"
+
+.EXAMPLE
+    # 5. SD放送やワンセグも含める場合
+    # サブチャンネルなどのTSを扱う可能性がある場合に指定します。
+    .\Convert-DrcsJsonToAmatsukaze.ps1 -IncludeNonHD
 #>
 
 [CmdletBinding()]
@@ -67,7 +69,6 @@ param(
     [Parameter(Position=1)] [string]$JsonPath = "https://archive.hsk.st.nhk/npd3/config/drcs-subst.json",
     [Parameter(Position=2)] [string]$OutputDir = "drcs_output",
     [Parameter(Position=3)] [string]$OutputMapFileName = "drcs_map.txt",
-
     [Parameter(Position=4)]
     # HD(36x36)以外のデータ(SD/ワンセグ等)も含める場合は指定してください
     [switch]$IncludeNonHD = $false
@@ -331,7 +332,7 @@ function Initialize-Environment {
     try { Add-Type -TypeDefinition $CSHARP_CODE -Language CSharp } catch { if (-not $_.Exception.Message.Contains("AmatsukazeLogic")) { throw "C# Compilation Failed: $($_.Exception.Message)" } }
     
     # ログファイルパスの生成 (スクリプトと同名の .log)
-    $scriptName = if ($PSCommandPath) { [System.IO.Path]::GetFileName($PSCommandPath) } else { "Convert.ps1" }
+    $scriptName = if ($PSCommandPath) { [System.IO.Path]::GetFileName($PSCommandPath) } else { "Convert-DrcsJsonToAmatsukaze.ps1" }
     return [System.IO.Path]::ChangeExtension($scriptName, ".log")
 }
 
@@ -364,7 +365,7 @@ function Get-JsonData {
 function Load-ExistingMap {
     param([string]$Path)
     $map = @{}; $lines = [System.Collections.Generic.List[string]]::new()
-    # 既存の drcs_map.txt がある場合、重複処理をスキップするために読み込む
+    # 既存のマップ定義ファイルが存在する場合、重複処理をスキップするために読み込む
     if (-not [string]::IsNullOrEmpty($Path) -and (Test-Path $Path)) {
         Write-Host "Loading Existing Map: $Path"
         $rawLines = Get-Content -LiteralPath $Path -Encoding UTF8
@@ -388,7 +389,7 @@ function Process-Conversion {
     $logBuffer = @()
     $finalLines = [System.Collections.Generic.List[string]]::new()
     
-    # 既存マップの内容を引き継ぐ
+    # 既存のマップ定義の内容を引き継ぐ
     if ($ExistingMapData.Lines -and $ExistingMapData.Lines.Count -gt 0) { $finalLines.AddRange($ExistingMapData.Lines) }
     $currentMap = $ExistingMapData.Map
     
@@ -429,7 +430,7 @@ function Process-Conversion {
 
             $logBuffer += "$hash=$char [BASE64: $($item.drcs)]"
 
-            # 既にマップに存在する場合はファイル生成をスキップ (高速化)
+            # 既にマップに存在する場合はファイル生成をスキップ
             if ($currentMap.ContainsKey($hash)) {
                 $skipped++
             } else {
@@ -474,7 +475,7 @@ try {
     # 変換処理実行
     $result = Process-Conversion -JsonData $jsonData -ExistingMapData $existingData -OutputDir $OutputDir -LogPath $logFilePath -IncludeNonHD:$IncludeNonHD
 
-    # マップファイルの書き出し
+    # マップ定義ファイルの書き出し
     $finalMapPath = Join-Path $OutputDir $OutputMapFileName
     [System.IO.File]::WriteAllLines($finalMapPath, $result.Lines, [System.Text.Encoding]::UTF8)
 
@@ -483,4 +484,8 @@ try {
     Write-Host "Output Map : $finalMapPath"
     Write-Host "Log File   : $logFilePath"
     Write-Host "Status     : Added $($result.Added), Skipped $($result.Skipped), Excluded(Non-HD) $($result.ExcludedNonHD)"
-} catch { Write-Error "Error: $_"; exit 1 }
+} catch {
+    Write-Error "Error: $_"
+    exit 1
+}
+
