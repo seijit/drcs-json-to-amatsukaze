@@ -44,7 +44,6 @@
     # 既存のマップ定義ファイルを指定した場合は、その内容を読み込み、
     # 未登録の文字のみを追記した新しいマップ定義ファイルを出力します。
     # 既存のマップ定義ファイルを上書き更新することはありません。
-    # 既に変換済みの画像は生成されず、新しい外字だけが生成されます。
     .\Convert-DrcsJsonToAmatsukaze.ps1 -ExistingMapPath "C:\amatsukaze\drcs\drcs_map.txt"
     .\Convert-DrcsJsonToAmatsukaze.ps1 "C:\amatsukaze\drcs\drcs_map.txt"
 
@@ -344,8 +343,7 @@ function Get-JsonData {
     
     if ($Path -match "^https?://") { 
         try { 
-            # Windows PowerShell (5.1) 対策: 
-            # Invoke-RestMethod は文字化けするため、WebClient で UTF-8 を明示して取得
+            # WebClient で UTF-8 を明示して取得。PowerShell (5.1) 対策
             $wc = New-Object System.Net.WebClient
             $wc.Encoding = [System.Text.Encoding]::UTF8
             $jsonStr = $wc.DownloadString($Path)
@@ -488,4 +486,5 @@ try {
     Write-Error "Error: $_"
     exit 1
 }
+
 
