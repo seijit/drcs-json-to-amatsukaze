@@ -4,7 +4,6 @@ REM Amatsukaze用 DRCS変換スクリプト起動ランチャー
 REM -----------------------------------------------------------------------------
 REM 
 REM 【概要】 
-REM
 REM  同階層にある同名のPowerShellスクリプトを実行します。 
 REM
 REM 【使い方 / Examples】 
@@ -18,7 +17,7 @@ REM     このバッチファイルの後ろにパラメータを付けること
 REM
 REM     [例A] 既存のマップファイルを引き継いで差分更新する場合: 
 REM       Convert-DrcsJsonToAmatsukaze.bat -ExistingMapPath "C:\amatsukaze\drcs\drcs_map.txt"
-REM       Convert-DrcsJsonToAmatsukaze.bat "C:\amatsukaze\drcs\drcs_map.txt" -OutputDir
+REM       Convert-DrcsJsonToAmatsukaze.bat "C:\amatsukaze\drcs\drcs_map.txt"
 REM
 REM     [例B] 出力先フォルダ名を変更する場合 (※フォルダは存在しないこと): 
 REM       Convert-DrcsJsonToAmatsukaze.bat -OutputDir "drcs_v2"
@@ -37,3 +36,4 @@ set "SELF_FILE_NAME=%~n0"
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0%SELF_FILE_NAME%.ps1" %*
 
 pause
+
