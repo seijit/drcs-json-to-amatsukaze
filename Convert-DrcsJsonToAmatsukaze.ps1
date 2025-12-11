@@ -1,7 +1,7 @@
 ﻿<#
 .SYNOPSIS
     drcs-subst.json を解析し、Amatsukaze 用の BMP と drcs_map.txt を生成します。
-    (v35: Get-JsonData を PowerShell 5.1 に対応)
+    (v35.1: Get-JsonData を PowerShell 5.1 に対応)
 
 .DESCRIPTION
     NHK等の放送波に含まれる外字データ(DRCS)の定義ファイル(JSON)を読み込み、
@@ -23,10 +23,26 @@
     Amatsukazeで通常エンコードするのはHD画質がほとんどであるため、
     本スクリプトはデフォルトで「36x36」以外の低解像度データを除外します。
 
+.PARAMETER ExistingMapPath
+    既存の drcs_map.txt のパス。
+    既存のマップ定義ファイルを指定した場合は、その内容を読み込み、
+    未登録の文字のみを追記した新しいマップ定義ファイルを出力します。
+    既存のマップ定義ファイルを上書き更新することはありません。
+    省略時は既存定義の読み込みを行いません。
+
+.PARAMETER JsonPath
+    NHK DRCS変換テーブル(JSON)の URL または ローカルファイルパス。
+    省略時のデフォルトは "https://archive.hsk.st.nhk/npd3/config/drcs-subst.json" です。
+
 .PARAMETER OutputDir
     出力先フォルダパス。
     データの混在や破損を防ぐため、「存在しないフォルダパス」を指定する必要があります。
     指定したパスにフォルダが既に存在する場合、スクリプトはエラーで停止します。
+    省略時のデフォルトは "drcs_output" です。
+
+.PARAMETER OutputMapFileName
+    出力されるマップ定義ファイルのファイル名。
+    省略時のデフォルトは "drcs_map.txt" です。
 
 .PARAMETER IncludeNonHD
     [スイッチ] 指定すると、HDサイズ(36x36)以外のデータ(SD/ワンセグ等)も除外せずに全て出力します。
@@ -39,11 +55,7 @@
 
 .EXAMPLE
     # 2. 既存のマップ定義を引き継いだマップ定義ファイルを出力する場合
-    # -ExistingMapPath に既存のマップ定義ファイルを指定します。
-    # または第1引数に既存のマップ定義ファイルを指定します。
-    # 既存のマップ定義ファイルを指定した場合は、その内容を読み込み、
-    # 未登録の文字のみを追記した新しいマップ定義ファイルを出力します。
-    # 既存のマップ定義ファイルを上書き更新することはありません。
+    # -ExistingMapPath または 第1引数 に既存のマップ定義ファイルを指定します。
     .\Convert-DrcsJsonToAmatsukaze.ps1 -ExistingMapPath "C:\amatsukaze\drcs\drcs_map.txt"
     .\Convert-DrcsJsonToAmatsukaze.ps1 "C:\amatsukaze\drcs\drcs_map.txt"
 
